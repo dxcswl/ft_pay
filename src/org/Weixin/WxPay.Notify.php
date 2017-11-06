@@ -1,5 +1,6 @@
 <?php
-namespace ft_pay;
+namespace ft_pay\org\weixin;
+require_once "WxPay.Api.php";
 /**
  * 
  * 回调基础类

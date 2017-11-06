@@ -16,13 +16,13 @@ class Weixin
      */
 
     public static function getWeixinApp($config,$total_price,$order_id,$pay_id){
-
-        $notify = new \NativePay();
+        require_once 'org\weixin\WxPay.NativePay.php';
+        $notify = new \ft_pay\org\weixin\NativePay();
         //方式二
-        $input = new \ft_pay\WxPayUnifiedOrder();
+        $input = new \ft_pay\org\weixin\WxPayUnifiedOrder();
         $input->SetBody($config['body']);
         //$input->SetAttach($order_id);
-        $input->SetOut_trade_no($order_id);
+        $input->SetOut_trade_no($pay_id);
         $input->SetTotal_fee($total_price);
         //$input->SetTime_start(date("YmdHis"));
         //$input->SetTime_expire(date("YmdHis", time() + 600));
@@ -41,7 +41,23 @@ class Weixin
             $data['spbill_create_ip'] = '171.113.60.93';
             return ['code' => 1, 'msg' => 'OK', 'data' => $data];
         }else{
-            return ['code' => 99, 'msg' => '请求错误', 'data' => []];
+            if(!isset($result['return_msg'])){
+                $result['return_msg'] = '请求错误';
+            }
+            return ['code' => 99, 'msg' => $result['return_msg'], 'data' => []];
+        }
+    }
+
+    public static function getWeixinNotify(){
+        require_once 'org\weixin\WxPay.Notify.php';
+        $WxPayNotify = new \ft_pay\org\weixin\WxPayNotify();
+        $WxPayNotify->Handle(FALSE);
+        $ret = $WxPayNotify->GetReturn_code();
+        if($ret != "FAIL"){
+            $order_id = $WxPayNotify->getData('out_trade_no');
+            return ['code' => 1, 'msg' => '成功', 'data' => $order_id];
+        }else{
+            return ['code' => 99, 'msg' => '回调授权报错: '.$WxPayNotify->GetReturn_msg(), 'data' => $_POST];
         }
     }
 

@@ -1,5 +1,5 @@
 <?php
-namespace ft_pay;
+namespace ft_pay\org\weixin;
 /**
 * 	配置账号信息
 */

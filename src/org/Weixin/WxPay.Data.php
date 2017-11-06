@@ -1,12 +1,10 @@
 <?php
-namespace ft_pay;
+namespace ft_pay\org\weixin;
 /**
 * 2015-06-29 修复签名问题
 **/
 require_once "WxPay.Config.php";
-require_once "WxPay.Exception.php";
 
-use WxPayException;
 
 /**
  * 
@@ -50,14 +48,14 @@ class WxPayDataBase
 
 	/**
 	 * 输出xml字符
-	 * @throws WxPayException
+	 * @throws \Exception
 	**/
 	public function ToXml()
 	{
 		if(!is_array($this->values) 
 			|| count($this->values) <= 0)
 		{
-    		throw new WxPayException("数组数据异常！");
+    		throw new \Exception("数组数据异常！");
     	}
     	
     	$xml = "<xml>";
@@ -76,12 +74,12 @@ class WxPayDataBase
     /**
      * 将xml转为array
      * @param string $xml
-     * @throws WxPayException
+     * @throws \Exception
      */
 	public function FromXml($xml)
 	{	
 		if(!$xml){
-			throw new WxPayException("xml数据异常！");
+			throw new \Exception("xml数据异常！");
 		}
         //将XML转为array
         //禁止引用外部xml实体
@@ -150,14 +148,14 @@ class WxPayResults extends WxPayDataBase
 	{
 		//fix异常
 		if(!$this->IsSignSet()){
-			throw new WxPayException("签名错误！");
+			throw new \Exception("签名错误！");
 		}
 		
 		$sign = $this->MakeSign();
 		if($this->GetSign() == $sign){
 			return true;
 		}
-		throw new WxPayException("签名错误！");
+		throw new \Exception("签名错误！");
 	}
 	
 	/**
@@ -200,7 +198,7 @@ class WxPayResults extends WxPayDataBase
     /**
      * 将xml转为array
      * @param string $xml
-     * @throws WxPayException
+     * @throws \Exception
      */
 	public static function Init($xml)
 	{	
