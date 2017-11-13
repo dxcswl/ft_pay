@@ -1,0 +1,21 @@
+{
+    "name": "dxcswl/ft_pay",
+    "description": "我们需要一个核心驱动的支付哦",
+    "authors": [
+        {
+            "name": "dxcswl",
+            "email": "dxcswl@163.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+	},
+    "autoload": {
+        "psr-4": {
+            "ft_pay\\": "src"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    }
+}
