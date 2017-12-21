@@ -25,54 +25,27 @@ class Weixin {
         }
     }
 
-    public static function getWeixinApps($config, $total_price, $order_id, $pay_id) {
-        require_once 'org\weixin\WxPay.NativePay.php';
-        $notify = new \ft_pay\org\weixin\NativePay();
-        //方式二
-        $input = new \ft_pay\org\weixin\WxPayUnifiedOrder();
-        $input->SetBody($config['body']);
-        //$input->SetAttach($order_id);
-        $input->SetOut_trade_no($pay_id);
-        $input->SetTotal_fee($total_price);
-        //$input->SetTime_start(date("YmdHis"));
-        //$input->SetTime_expire(date("YmdHis", time() + 600));
-        //$input->SetGoods_tag("在线支付");
-        $input->SetNotify_url($config['notify_url']);
-        $input->SetTrade_type("APP");
-        //$input->SetProduct_id($order_id);
-        $result = $notify->GetPayApp($input);
-        if(isset($result['appid']) and isset($result['nonce_str']) and isset($result['mch_id']) and isset($result['prepay_id']) and isset($result['sign'])) {
-            $data['nonce_str'] = $result['nonce_str'];
-            $data['prepay_id'] = $result['prepay_id'];
-            $data['sign'] = $result['sign'];
-            $data['appid'] = $result['appid'];
-            $data['partnerid'] = $result['mch_id'];
-            $data['timestamp'] = time();
-            $data['spbill_create_ip'] = '171.113.60.93';
-            return ['code' => 1, 'msg' => 'OK', 'data' => $data];
-        } else {
-            if(!isset($result['return_msg'])) {
-                $result['return_msg'] = '请求错误';
-            }
-            return ['code' => 99, 'msg' => $result['return_msg'], 'data' => []];
-        }
-    }
-
     /*
      * 微信支付app发起处理
      *
      */
 
     public static function getWeixinApp($config, $total_price, $order_id, $pay_id) {
-        $result = self::getWeixinUnifiedOrder($config, $total_price, $order_id, $pay_id);
+        $result_code = self::getWeixinUnifiedOrder($config, $total_price, $order_id, $pay_id);
+        if($result_code['code'] == 0){
+            return $result_code;
+        }else{
+            $result = $result_code['data'];
+        }
         if(isset($result['appid']) and isset($result['nonce_str']) and isset($result['mch_id']) and isset($result['prepay_id']) and isset($result['sign'])) {
-            $data['nonce_str'] = $result['nonce_str'];
-            $data['prepay_id'] = $result['prepay_id'];
-            $data['sign'] = $result['sign'];
             $data['appid'] = $result['appid'];
             $data['partnerid'] = $result['mch_id'];
+            $data['prepayid'] = $result['prepay_id'];
+            $data['package'] = 'Sign=WXPay';
+            $data['noncestr'] = $result['nonce_str'];
             $data['timestamp'] = time();
-            $data['spbill_create_ip'] = '171.113.60.93';
+            $data['sign'] = self::MakeSign($data, $config['key']);
+            $data['sign_original'] = $result['sign'];
             return ['code' => 1, 'msg' => 'OK', 'data' => $data];
         } else {
             if(isset($result['return_msg'])) {
@@ -86,43 +59,51 @@ class Weixin {
         $ret = ['code' => 99, 'msg' => '未知', 'data' => []];
         //检测必填参数
         if(!$pay_id) {
-            $ret['msg'] = "缺少统一支付接口必填参数out_trade_no！";
+            return ['code' => 0, 'msg' => '缺少统一支付接口必填参数out_trade_no', 'data' => []];
         } else if(!$config['body']) {
-            $ret['msg'] = "缺少统一支付接口必填参数body！";
+            return ['code' => 0, 'msg' => '缺少统一支付接口必填参数body', 'data' => []];
         } else if(!$total_price) {
-            $ret['msg'] = "缺少统一支付接口必填参数total_fee！";
+            return ['code' => 0, 'msg' => '缺少统一支付接口必填参数total_fee', 'data' => []];
         } elseif($trade_type == "JSAPI" && !$config['openid']) {
-            $ret['msg'] = "统一支付接口中，缺少必填参数openid！trade_type为JSAPI时，openid为必填参数！";
+            return ['code' => 0, 'msg' => '统一支付接口中，缺少必填参数openid！trade_type为JSAPI时，openid为必填参数', 'data' => []];
         } elseif($trade_type == "NATIVE" && !$config['product_id']) {
-            $ret['msg'] = "统一支付接口中，缺少必填参数product_id！trade_type为JSAPI时，product_id为必填参数！";
+            return ['code' => 0, 'msg' => '统一支付接口中，缺少必填参数product_id！trade_type为JSAPI时，product_id为必填参数！', 'data' => []];
         } else {
             $url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-
-            $data = ['appid' => $config['appid'], 'mch_id' => $config['mchid'], //'device_info' => $config['appid'],
-                'nonce_str' => self::getNonceStr(), //'sign' => $config['appid'],
-                //'sign_type' => $config['appid'],
-                'body' => $config['body'], //'detail' => $config['appid'],
-                //'attach' => $config['appid'],
-                'out_trade_no' => $pay_id, //'fee_type' => $config['appid'],
-                'total_fee' => $total_price, 'spbill_create_ip' => $_SERVER['REMOTE_ADDR'], //'time_start' => $config['appid'],
-                //'time_expire' => $config['appid'],
-                //'goods_tag' => $config['appid'],
-                'notify_url' => $config['notify_url'], 'trade_type' => $trade_type, //'product_id' => $config['appid'],
-                //'limit_pay' => $config['appid'],
-                //'openid' => $config['appid'],
-                //'scene_info' => $config['appid'],
+            $data = [
+                'appid' => $config['appid'],
+                'mch_id' => $config['mchid'],
+                'nonce_str' => self::getNonceStr(),
+                'body' => $config['body'],
+                'out_trade_no' => $pay_id,
+                'total_fee' => $total_price,
+                'spbill_create_ip' => $_SERVER['REMOTE_ADDR'],
+                'notify_url' => $config['notify_url'],
+                'trade_type' => $trade_type,
             ];
             $data['sign'] = self::MakeSign($data, $config['key']);
             $xml = self::ToXml($data);
             if($xml == false){
-                $ret['msg'] = "数组数据异常！";
+                return ['code' => 0, 'msg' => '统一支付(发送)xml数据异常', 'data' => []];
             }else{
                 $response = self::postXmlCurl($xml, $url, false, 6);
                 $result = self::FromXml($response);
                 if($result == false){
-                    $ret['msg'] = "数组数据异常！";
+                    return ['code' => 0, 'msg' => '统一支付(获取)xml数据异常', 'data' => []];
                 }else{
-                    return $result;
+                    $response = self::postXmlCurl($xml, $url, false, 6);
+                    //验证签名
+                    $check_sign = self::check_sign($response,$config['key']);
+                    if($check_sign['code'] == 1){
+                        $result = $check_sign['data'];
+                        if(!$result){
+                            return ['code' => 0, 'msg' => '统一支付(获取)数组数据异常', 'data' => $result];
+                        }else{
+                            return ['code' => 1, 'msg' => '签名成功', 'data' => $result];
+                        }
+                    }else{
+                        return $check_sign;
+                    }
                 }
             }
             //self::reportCostTime($url, self::getMillisecond(), $result, $config);//上报请求花费时间
@@ -336,6 +317,103 @@ class Weixin {
             self::report($objInput);
         } catch(\Exception $e) {
             //不做任何处理
+        }
+    }
+
+
+    /**
+     *
+     * 支付结果通用通知
+     * @param function $callback
+     * 直接回调函数使用方法: notify(you_function);
+     * 回调类成员函数方法:notify(array($this, you_function));
+     * $callback  原型为：function function_name($data){}
+     */
+    public static function notify($config)
+    {
+        //获取通知的数据
+        $xml = file_get_contents('php://input');
+        //如果返回成功则验证签名
+        try {
+            //验证签名
+            $check_sign = self::check_sign($xml,$config['key']);
+            if($check_sign['code'] == 1){
+                $values = $check_sign['data'];
+                //查询订单，判断订单真实性
+                return self::orderQuery($values["transaction_id"],$config);
+            }else{
+                return $check_sign;
+            }
+
+        } catch (\Exception $e){
+            return ['code' => 0, 'msg' => $e->getMessage(), 'data' => []];
+        }
+    }
+
+
+
+    public static function check_sign($xml,$key){
+        $values = self::FromXml($xml);
+        if(!$values){
+            return ['code' => 0, 'msg' => 'xml数据异常', 'data' => []];
+        }
+
+        if($values['return_code'] != 'SUCCESS'){
+            return ['code' => 0, 'msg' => '错误状态', 'data' => $values];
+        }
+        //检测签名
+        if(!array_key_exists('sign',$values)){
+            return ['code' => 0, 'msg' => '签名中不包含:sign字段', 'data' => []];
+        }
+
+        if($values['sign'] != self::MakeSign($values, $key)){
+            return ['code' => 0, 'msg' => '签名错误,比对key错误', 'data' => []];
+        }else{
+            return ['code' => 1, 'msg' => '验证签名成功', 'data' => $values];
+        }
+    }
+
+    /**
+     *
+     * 查询订单，WxPayOrderQuery中out_trade_no、transaction_id至少填一个
+     * appid、mchid、spbill_create_ip、nonce_str不需要填入
+     * @param WxPayOrderQuery $inputObj
+     * @param int $timeOut
+     * @throws WxPayException
+     * @return 成功时返回，其他抛异常
+     */
+    public static function orderQuery($transaction_id, $config)
+    {
+        $url = "https://api.mch.weixin.qq.com/pay/orderquery";
+        //检测必填参数
+        if(!$transaction_id) {
+            return ['code' => 0, 'msg' => '订单查询接口中，out_trade_no、transaction_id至少填一个', 'data' => []];
+        }
+
+        $data = [
+            'appid' => $config['appid'],
+            'mch_id' => $config['mchid'],
+            'nonce_str' => self::getNonceStr(),
+            'transaction_id' => $transaction_id,
+        ];
+        $data['sign'] = self::MakeSign($data, $config['key']);
+        $xml = self::ToXml($data);
+        if($xml == false){
+            return ['code' => 0, 'msg' => '查询订单(发送)xml数据异常', 'data' => $result];
+        }else{
+            $response = self::postXmlCurl($xml, $url, false, 6);
+            //验证签名
+            $check_sign = self::check_sign($response,$config['key']);
+            if($check_sign['code'] == 1){
+                $result = $check_sign['data'];
+                if(!$result){
+                    return ['code' => 0, 'msg' => '数组数据异常', 'data' => $result];
+                }else{
+                    return ['code' => 1, 'msg' => '签名成功', 'data' => $result];
+                }
+            }else{
+                return $check_sign;
+            }
         }
     }
 }
