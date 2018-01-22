@@ -80,7 +80,7 @@ class Pay
 				];
 			}
 
-			if(isset($iap_err_msg[$data['status']]) and $iap_err_msg[$data['status']]){
+			if(isset($iap_err_msg[$data['status']]) && $iap_err_msg[$data['status']]){
 				return [
 					'errNo' => 4,
 					'errMsg' => '购买失败!code: '.$iap_err_msg[$data['status']],
@@ -136,7 +136,7 @@ class Pay
         $input->SetTrade_type("APP");
         //$input->SetProduct_id($order_id);
         $result = $notify->GetPayApp($input);
-        if(isset($result['appid']) and isset($result['nonce_str']) and isset($result['mch_id']) and isset($result['prepay_id']) and isset($result['sign'])){
+        if(isset($result['appid']) && isset($result['nonce_str']) && isset($result['mch_id']) && isset($result['prepay_id']) && isset($result['sign'])){
             $data['nonce_str'] = $result['nonce_str'];
             $data['prepay_id'] = $result['prepay_id'];
             $data['sign'] = $result['sign'];
@@ -244,7 +244,7 @@ class Pay
 				return $GetLegal;
 			}
 
-			if ($trade_status == 'TRADE_SUCCESS' || $trade_status == 'TRADE_FINISHED')
+			if (($trade_status == 'TRADE_SUCCESS') || ($trade_status == 'TRADE_FINISHED'))
 			{
 				$pay_find = $this->getPayFind(['order_id'=>$out_trade_no]);
 				if($pay_find){
@@ -293,7 +293,7 @@ class Pay
 		$input->SetTrade_type("APP");
 		//$input->SetProduct_id($order_id);
 		$result = $notify->GetPayApp($input);
-		if(isset($result['appid']) and isset($result['nonce_str']) and isset($result['mch_id']) and isset($result['prepay_id']) and isset($result['sign'])){
+		if(isset($result['appid']) && isset($result['nonce_str']) && isset($result['mch_id']) && isset($result['prepay_id']) && isset($result['sign'])){
 			$data['nonce_str'] = $result['nonce_str'];
 			$data['prepay_id'] = $result['prepay_id'];
 			$data['sign'] = $result['sign'];
@@ -344,7 +344,7 @@ class Pay
 	}
 
 	protected function SetPayLast($pay_find,$trade_no,$operator = 'iap'){
-		if(isset($pay_find['status']) and $pay_find['status'] == 0){
+		if(isset($pay_find['status']) && $pay_find['status'] == 0){
 			$uid_attribute = set_user_attribute_account($pay_find['uid'],['mass'=>$pay_find['mass'],'score'=>$pay_find['money']]);
 			if ($uid_attribute['status'] != 1) {
 				return -2;

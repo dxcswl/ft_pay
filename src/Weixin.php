@@ -37,7 +37,7 @@ class Weixin {
         }else{
             $result = $result_code['data'];
         }
-        if(isset($result['appid']) and isset($result['nonce_str']) and isset($result['mch_id']) and isset($result['prepay_id']) and isset($result['sign'])) {
+        if(isset($result['appid']) && isset($result['nonce_str']) && isset($result['mch_id']) && isset($result['prepay_id']) && isset($result['sign'])) {
             $data['appid'] = $result['appid'];
             $data['partnerid'] = $result['mch_id'];
             $data['prepayid'] = $result['prepay_id'];

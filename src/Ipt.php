@@ -59,7 +59,7 @@ class Ipt
                 ];
             }
 
-            if(isset($iap_err_msg[$data['status']]) and $iap_err_msg[$data['status']]){
+            if(isset($iap_err_msg[$data['status']]) && $iap_err_msg[$data['status']]){
                 return [
                     'errNo' => 4,
                     'errMsg' => '购买失败!code: '.$iap_err_msg[$data['status']],
