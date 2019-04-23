@@ -14,18 +14,21 @@ use ft_pay\org\Ali;
 
 class Pay
 {
-	/*
-	 *  去苹果服务器二次验证代码
-	 *
+    /*
+     *  去苹果服务器二次验证代码
+     *
      * @param $receipt 苹果返回数据
      * @param bool $isSandbox false 正式环境  ture 沙箱
      * @return array|mixed
-	 */
-	public static function getIapReceiptData($receipt, $isSandbox = false) {
+     */
+    public static function getIapNotify($receipt = '', $isSandbox = false) {
+        if(isset($receipt) && !$receipt) {
+            return ['code' => 0, 'msg' => '参数必须存在', 'data' => []];
+        }
         $ipt = new Ipt($receipt, $isSandbox = false);
-        return $ipt->getIapReceiptData();
+        return $ipt->getIapNotify();
 
-	}
+    }
 
 
     /*
@@ -47,13 +50,27 @@ class Pay
     ]
      */
 
-    public static function getWeixinApp($config, $money , $pay_id){
+    public static function getWeixinApp($config, $money=0 , $pay_id=0){
+        if(isset($money) && !$money) {
+            return ['code' => 0, 'msg' => '参数必须存在：money', 'data' => []];
+        }
+        if(isset($pay_id) && !$pay_id) {
+            return ['code' => 0, 'msg' => '参数必须存在：pay_id', 'data' => []];
+        }
+
         $weixin = new Weixin();
         $total_price = (int) ($money*100);
         return $weixin->getWeixin($config, $total_price , $pay_id,'APP');
     }
 
-    public static function getWeixinWeb($config, $money , $pay_id){
+    public static function getWeixinWeb($config, $money = 0 , $pay_id = 0){
+        if(isset($money) && !$money) {
+            return ['code' => 0, 'msg' => '参数必须存在：money', 'data' => []];
+        }
+        if(isset($pay_id) && !$pay_id) {
+            return ['code' => 0, 'msg' => '参数必须存在：pay_id', 'data' => []];
+        }
+
         $weixin = new Weixin();
         $total_price = (int) ($money*100);
         return $weixin->getWeixin($config, $total_price , $pay_id,'JSAPI');
@@ -89,7 +106,14 @@ class Pay
     ]
      */
 
-    public static function getAliApp($config, $money , $pay_id){
+    public static function getAliApp($config, $money = 0, $pay_id = 0){
+        if(isset($money) && !$money) {
+            return ['code' => 0, 'msg' => '参数必须存在：money', 'data' => []];
+        }
+        if(isset($pay_id) && !$pay_id) {
+            return ['code' => 0, 'msg' => '参数必须存在：pay_id', 'data' => []];
+        }
+
         $ali = new Ali();
         return $ali->getAli($config, $money , $pay_id,'APP');
     }

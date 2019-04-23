@@ -14,7 +14,7 @@ class Ipt
     /*
      *  去苹果服务器二次验证代码
      */
-    public function getIapReceiptData($receipt, $isSandbox = false) {
+    public function getIapNotify($receipt, $isSandbox = false) {
         $iap_err_msg = [
             21000 => 'App Store不能读取你提供的JSON对象',
             21002 => 'receipt-data域的数据有问题',
