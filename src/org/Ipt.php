@@ -59,7 +59,11 @@ class Ipt
             if (!isset($data['status']) || $data['status'] != 0) {
                 return ['status' => 0, 'msg' => '购买失败'];
             }
-            return ['status' => 1, 'msg' => '成功','data'=>$data['receipt']];
+			if(is_array($data) && ($data['errNo'] == 0)){
+				return ['status' => 1, 'msg' => '成功','data'=>$data['receipt']];
+			}else{
+				return ['status' => 0, 'msg' => $data['errMsg'], 'data' => ['errCode' => $data['errNo']]];
+			}
         }
     }
 }
